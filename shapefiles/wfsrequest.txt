@@ -1,0 +1,1 @@
+http://map.ices.dk:80/geoserver/ows?service=WFS&version=1.0.0&request=GetFeature&outputFormat=SHAPE-ZIP&typeName=ices_ref:ices_areas
