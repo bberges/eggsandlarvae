@@ -5,7 +5,7 @@
 
 rm(list=(ls()))
 
-path1 <- "C:/git/eggsandlarvae/"
+path1 <- "G:/git/eggsandlarvae/"
 setwd(path1)
 
 library(tidyverse)
@@ -18,10 +18,11 @@ library(ggpubr)
 
 figuresPath <- file.path('.','figures')
 
+# '2018_2023_DRS_tweedieCPUE'
 #'MIK_tweedieCPUE'
 #'MIKandDRS_tweedieCPUE'
 #'2018_2023_MIKandDRS_tweedieCPUE'
-mod.sel <- '2018_2023_MIKandDRS_tweedieCPUE'
+mod.sel <- 'MIKandDRS_tweedieCPUE'
 load(file.path('./results',paste0(mod.sel,'.RData')))
 models <- res
 
@@ -222,6 +223,8 @@ p <- ggplot(df.plot,aes(x=data,y=data.comp,col=as.factor(surveyBase)))+
       #theme(legend.position = "none")+
       xlab('IBTS0 index')+
       ylab('Other index')+
+      theme(legend.position="top")+
+      guides(colour = guide_legend(nrow = 3))+
       stat_cor(method = "pearson")+
       facet_grid(surveyComp~age.comp)
 
@@ -236,7 +239,9 @@ p <- ggplot(subset(test.all,metric == 'cor'),aes(x=as.numeric(age.comp),y=data,c
       theme_bw()+
       geom_point()+
       geom_line()+
-      facet_wrap(~surveyComp,scales='free')
+      theme(legend.position="top")+
+      guides(colour = guide_legend(nrow = 3))+
+      facet_wrap(~surveyComp,scales='free',ncol = 1)
 
 ggsave(file.path(figuresPath,paste0(mod.sel,'_cor.png')),
        p,
@@ -249,7 +254,9 @@ p <- ggplot(subset(test.all,metric == 'dist'),aes(x=as.numeric(age.comp),y=data,
       theme_bw()+
       geom_point()+
       geom_line()+
-      facet_wrap(~surveyComp,scales='free')
+      theme(legend.position="top")+
+      guides(colour = guide_legend(nrow = 3))+
+      facet_wrap(~surveyComp,scales='free',ncol = 1)
 
 ggsave(file.path(figuresPath,paste0(mod.sel,'_dist.png')),
        p,
@@ -347,3 +354,6 @@ if(length(yearsModel) > inter.corr){
          units = c("mm"),
          dpi = 300)
 }
+
+
+
