@@ -1,0 +1,5 @@
+"model.name","AIC","formula","names"
+"mod9",-89444.6344427035,"Year + Country + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 80) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(ShipG, bs = ""re"") + s(sqrt(Depth), bs = ""cr"", k = 10)","IBTS0.mod9"
+"mod7",-89439.3314480325,"Year + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 80) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(ShipG, bs = ""re"") + Country + s(Depth, bs = ""cr"")","IBTS0.mod7"
+"mod10",-89437.4929913395,"Year + Country + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 80) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + Ship + s(sqrt(Depth), bs = ""cr"", k = 10)","IBTS0.mod10"
+"mod8",-89401.7833118604,"Year + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 80) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(ShipG, bs = ""re"") + s(Depth, bs = ""cr"")","IBTS0.mod8"

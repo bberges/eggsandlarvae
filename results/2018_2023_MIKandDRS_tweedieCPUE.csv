@@ -1,0 +1,6 @@
+"model.name","AIC","formula","names"
+"mod5",-18952.1356917696,"Year + Ship + Country + DayNight + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 40) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(Depth, bs = ""cr"") + Survey","IBTS0.mod5"
+"mod1",-18949.0672865643,"Year + Country + DayNight + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 40) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(ShipG, bs = ""re"") + s(Depth, bs = ""cr"") + Survey","IBTS0.mod1"
+"mod2",-18929.2169058569,"Year + DayNight + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 40) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(ShipG, bs = ""re"") + s(Depth, bs = ""cr"") + Survey","IBTS0.mod2"
+"mod4",-18913.9082113761,"Year + Country + DayNight + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 40) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(Depth, bs = ""cr"") + Survey","IBTS0.mod4"
+"mod3",-18898.8309063662,"Year + Country + s(lon, lat, bs = ""ds"", m = c(1, 0.5), k = 40) + s(lon, lat, bs = ""ds"", m = c(1, 0.5), by = Year, k = 5, id = 1) + s(ShipG, bs = ""re"") + s(Depth, bs = ""cr"") + Survey","IBTS0.mod3"
