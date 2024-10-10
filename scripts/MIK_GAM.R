@@ -1,5 +1,10 @@
+<<<<<<< HEAD
+path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
+#path1 <- "C:/git/harring_eggsandlarvae/"
+=======
 #path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
 path1 <- "C:/git/eggsandlarvae/"
+>>>>>>> a1473bb8d19c923e69d21332f0821f2a8b877781
 setwd(path1)
 
 library(tidyverse)
@@ -98,6 +103,96 @@ system.time(TW10 <- getSurveyIdx(dd, ages = 1, predD = grid.df,
 aic.tw10 = AIC.surveyIdx(TW10) # 421, better model
 qqnorm(residuals(TW10), main = paste0("Tweedie, MIK AIC = ", round(aic.tw10))); abline(0,1)
 
+<<<<<<< HEAD
+
+res <- list(mod7=TW7,
+            mod8=TW8,
+            mod9=TW9,
+            mod10=TW10)
+save(res, file = "MIK_tweedieCPUE.RData")
+
+#######################
+# tweedie - Abundance #
+#######################
+NoAtLngt = aggregate(Count ~ haul.id + LngtClas, data = dd.mik[[3]], FUN = sum)
+dd.mik.abundance <- dd.mik
+dd.mik.abundance$NL = dd.mik.abundance$N
+#view(dd.mik.abundance[[2]])
+
+dd.mik.abundance$Abundance <- rowSums(dd.mik.abundance$NL[, 1:ncol(dd.mik.abundance$NL)])
+dd.mik.abundance$Nage <- matrix(dd.mik.abundance$Abundance, ncol = 1)
+colnames(dd.mik.abundance$Nage) <- "1"
+
+## Remove levels of Gear, ShipG, StatRec with only zero observations
+dd_abundance <- removeZeroClusters(dd.mik.abundance, response="CPUE", factors=c("Gear","Ship"))
+dd_abundance <- subset(dd_abundance,!is.na(Depth))
+
+simplegrid = getGrid(dd_abundance, nLon = 25)
+plot(simplegrid)
+
+# grid as data.frame
+grid.df = subset(dd_abundance, haul.id %in% simplegrid[[3]])[[2]]
+
+table(dd_abundance[[2]]$Ship)
+table(dd_abundance[[2]]$Gear)
+str(dd_abundance[[2]])
+summary(dd_abundance[[1]])
+summary(dd_abundance[[2]])
+dd_abundance[[1]]$Age <- 0
+
+# modelling - tweedie distribution
+model1 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=20) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + Gear + s(sqrt(Depth), bs = 'cr') + offset(log(SweepLngt))"
+system.time(TW1 <- getSurveyIdx(dd_abundance, ages = 1, predD = grid.df, 
+                                fam = "Tweedie", modelP = model1, gamma = 1, 
+                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
+aic.tw1 = AIC.surveyIdx(TW1) # 76104
+qqnorm(residuals(TW1), main = paste0("Tweedie, MIK AIC = ", round(aic.tw1))); abline(0,1)
+
+
+model2 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + Gear + s(Depth, bs = 'cr') + offset(log(SweepLngt))"
+system.time(TW2 <- getSurveyIdx(dd_abundance, ages = 1, predD = grid.df, 
+                                fam = "Tweedie", modelP = model2, gamma = 1, 
+                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
+aic.tw2 = AIC.surveyIdx(TW2) # 75636
+qqnorm(residuals(TW2), main = paste0("Tweedie, MIK AIC = ", round(aic.tw2))); abline(0,1)
+
+# remove ship 
+model3 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + Gear + s(Depth, bs = 'cr') + offset(log(SweepLngt))"
+system.time(TW3 <- getSurveyIdx(dd_abundance, ages = 1, predD = grid.df, 
+                                fam = "Tweedie", modelP = model3, gamma = 1, 
+                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
+aic.tw3 = AIC.surveyIdx(TW3) # 75762, not a good idea
+qqnorm(residuals(TW3), main = paste0("Tweedie, MIK AIC = ", round(aic.tw3))); abline(0,1)
+
+# use ShipG, remove Depth
+model4 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + Gear + s(ShipG, bs = 're') + offset(log(SweepLngt))"
+system.time(TW4 <- getSurveyIdx(dd_abundance, ages = 1, predD = grid.df, 
+                                fam = "Tweedie", modelP = model4, gamma = 1, 
+                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
+aic.tw4 = AIC.surveyIdx(TW4) # 75674
+qqnorm(residuals(TW4), main = paste0("Tweedie, MIK AIC = ", round(aic.tw4))); abline(0,1)
+
+# 
+model5 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + Gear + s(ShipG, bs = 're') + s(Depth, bs = 'cr') + offset(log(SweepLngt))"
+system.time(TW5 <- getSurveyIdx(dd_abundance, ages = 1, predD = grid.df, 
+                                fam = "Tweedie", modelP = model5, gamma = 1, 
+                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
+aic.tw5 = AIC.surveyIdx(TW5) # 75628
+qqnorm(residuals(TW5), main = paste0("Tweedie, MIK AIC = ", round(aic.tw5))); abline(0,1)
+
+#
+model6 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(ShipG, bs = 're') + Country + s(Depth, bs = 'cr') + offset(log(SweepLngt))"
+system.time(TW6 <- getSurveyIdx(dd_abundance, ages = 1, predD = grid.df, 
+                                fam = "Tweedie", modelP = model6, gamma = 1, 
+                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
+aic.tw6 = AIC.surveyIdx(TW6) # 75589
+qqnorm(residuals(TW6), main = paste0("Tweedie, MIK AIC = ", round(aic.tw6))); abline(0,1)
+
+
+# Log-normal distribution
+model = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
+modelZ = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
+=======
 # Log-normal distribution
 model = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
 modelZ = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
@@ -197,6 +292,7 @@ qqnorm(residuals(TW6), main = paste0("Tweedie, MIK AIC = ", round(aic.tw6))); ab
 # Log-normal distribution
 model = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
 modelZ = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
+>>>>>>> a1473bb8d19c923e69d21332f0821f2a8b877781
 system.time( SI.dln1 <- getSurveyIdx(dd_abundance,ages=1,predD=grid.df,fam="LogNormal",modelP=model,modelZ=modelZ,gamma=1,cutOff=0.1,control=list(trace=TRUE,maxit=20)))
 aic.sidln1 = AIC.surveyIdx(SI.dln1) # 74828
 qqnorm(residuals(SI.dln1), main=paste0("Delta-Log Normal, AIC = ",round(aic.sidln1,1))); abline(0,1)

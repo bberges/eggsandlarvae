@@ -1,6 +1,7 @@
 rm(list = (ls()))
 
-path1 <- "//wurnet.nl/dfs-root/IMARES/IJmuiden/WOT/WOT surveys Zout - Haringlarven/Down's recruitment survey/New index calculation/"
+path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
+#path1 <- "C:/git/harring_eggsandlarvae/"
 setwd(path1)
 
 library(tidyverse)
@@ -252,7 +253,8 @@ summary(dAll[[3]])
 
 rm(list=(ls()))
 
-path1 <- "//wurnet.nl/dfs-root/IMARES/IJmuiden/WOT/WOT surveys Zout - Haringlarven/Down's recruitment survey/New index calculation/"
+path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
+#path1 <- "C:/git/harring_eggsandlarvae/"
 setwd(path1)
 
 library(tidyverse)

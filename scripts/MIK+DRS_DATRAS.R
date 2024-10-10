@@ -11,10 +11,14 @@ library(sp)
 library(sf)
 
 # load DRS data
+<<<<<<< HEAD
+load(paste0(getwd(), "./data/DRS2DATRAS_eggsLarvae.RData"))
+###########
 DATRAS_eggsLarvae <- readICES(file.path('./data','DATRAS_eggsLarvae_all.csv'), strict = TRUE)
 DATRAS_eggsLarvae  <- addSpatialData(DATRAS_eggsLarvae,"./shapefiles/ICES_areas.shp")
 #load(paste0(getwd(), "./data/DRS2DATRAS_eggsLarvae.RData"))
 DATRAS_eggsLarvae$Survey <- "DRS"
+>>>>>>> a1473bb8d19c923e69d21332f0821f2a8b877781
 
 # load MIK data
 MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'), strict = TRUE)
@@ -22,6 +26,40 @@ MIK2DATRAS_eggsLarvae  <- addSpatialData(MIK2DATRAS_eggsLarvae,"./shapefiles/ICE
 
 MIK2DATRAS_eggsLarvae  <- subset(MIK2DATRAS_eggsLarvae,
                                  ICES_area %in% as.character(c("IVa","IVb","IVc")))
+<<<<<<< HEAD
+
+MIK2DATRAS_eggsLarvae[[3]]$Count <- MIK2DATRAS_eggsLarvae[[3]]$TotalNo*MIK2DATRAS_eggsLarvae[[3]]$SubFactor
+
+# make a new variable, combine Ship and Gear
+MIK2DATRAS_eggsLarvae$ShipG = factor(paste(MIK2DATRAS_eggsLarvae$Ship,
+                                           MIK2DATRAS_eggsLarvae$Gear, sep = ":"))
+table(MIK2DATRAS_eggsLarvae$ShipG)
+MIK2DATRAS_eggsLarvae$dum = 1 
+
+dd.mik <- addSpectrum(MIK2DATRAS_eggsLarvae, cm.breaks = seq(0, 40, by = 1))
+names(dd.mik[[1]])
+summary(dd.mik[[1]])
+summary(dd.mik[[2]])
+summary(dd.mik[[3]])
+plot(dd.mik[[2]]$lon, dd.mik[[2]]$lat, pch = 1)
+
+# number at length
+NoAtLngt = aggregate(Count ~ haul.id + LngtClas, data = dd.mik[[3]], FUN = sum)
+dd.mik$NL = dd.mik$N
+#view(dd.mik[[2]])
+
+dd.mik$Abundance <- rowSums(dd.mik$NL[, 1:ncol(dd.mik$NL)])
+dd.mik$CPUE <- dd.mik$Abundance/dd.mik[[2]]$SweepLngt
+dd.mik$Nage <- matrix(dd.mik$CPUE, ncol = 1)
+colnames(dd.mik$Nage) <- "1"
+
+
+# combine DRS and MIK data
+DATRAS <- c(DATRAS_eggsLarvae, dd.mik)
+
+## Remove levels of Gear, ShipG, StatRec with only zero observations
+dd <- removeZeroClusters(dd.mik, response="CPUE", factors=c("Gear","Ship"))
+##
 MIK2DATRAS_eggsLarvae$Survey <- "MIK"
 
 
@@ -64,6 +102,7 @@ colnames(dd.all$Nage) <- "1"
 
 ## Remove levels of Gear, ShipG, StatRec with only zero observations
 dd <- removeZeroClusters(dd.all, response="CPUE", factors=c("Gear","Ship"))
+>>>>>>> a1473bb8d19c923e69d21332f0821f2a8b877781
 dd <- subset(dd,!is.na(Depth))
 
 simplegrid = getGrid(dd, nLon = 25)
@@ -79,6 +118,16 @@ summary(dd[[1]])
 summary(dd[[2]])
 dd[[1]]$Age <- 0
 
+<<<<<<< HEAD
+#############################
+
+summary(DATRAS)
+summary(DATRAS[[1]])
+summary(DATRAS[[2]])
+summary(DATRAS[[3]])
+
+table(DATRAS[[1]]$Gear)
+=======
 summary(dd$CPUE)
 hist(dd$CPUE[dd$CPUE < 0.0001])
 table(dd$CPUE)
@@ -294,3 +343,4 @@ res <- list(mod1 = tw1_recent,
             mod3 = tw3_recent,
             mod4 = tw4_recent)
 save(res, file = "2018_2023_MIKandDRS_tweedieCPUE.RData")
+>>>>>>> a1473bb8d19c923e69d21332f0821f2a8b877781

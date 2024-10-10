@@ -1,11 +1,6 @@
-# MIKandDRS_tweedieCPUE.RData 
-# mod1-mod4: tweedie, cpue
-# mod10-mod13: tweedie, abundance
-
-
 rm(list=(ls()))
 
-path1 <- "G:/git/eggsandlarvae/"
+path1 <- "C:/git/eggsandlarvae/"
 setwd(path1)
 
 library(tidyverse)
@@ -18,40 +13,30 @@ library(ggpubr)
 figuresPath <- file.path('.','figures')
 
 # ------------------------------------------------------------
-# compare best models
+# loading best models
 # ------------------------------------------------------------
 
-#'MIK_tweedieCPUE'
-#'MIKandDRS_tweedieCPUE'
-#'2018_2023_MIKandDRS_tweedieCPUE'
-mod.sel <- '2018_2023_MIKandDRS_tweedieCPUE'
+mod.sel <- 'MIK_LogNormalAbundance'
 load(file.path('./results',paste0(mod.sel,'.RData')))
-df.models.all <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
-model.MIKandDRS_2018_2023 <- res[[df.models.all$model.name[1]]]
+df.models.MIK <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
+model.MIK <- resMIK[[df.models.MIK$model.name[1]]]
 
-mod.sel <- 'MIK_tweedieCPUE'
+mod.sel <- 'DRS_LogNormalAbundance'
 load(file.path('./results',paste0(mod.sel,'.RData')))
-df.models.all <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
-model.MIK <- res[[df.models.all$model.name[1]]]
+df.models.DRS <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
+model.DRS <- resDRS[[df.models.DRS$model.name[1]]]
 
-mod.sel <- 'MIKandDRS_tweedieCPUE'
-load(file.path('./results',paste0(mod.sel,'.RData')))
-df.models.all <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
-model.MIKandDRS <- res[[df.models.all$model.name[1]]]
+yearsModel <- rownames(model.MIK[[1]])
 
-mod.sel <- '2018_2023_DRS_tweedieCPUE'
-load(file.path('./results',paste0(mod.sel,'.RData')))
-df.models.all <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
-model.DRS <- res[[df.models.all$model.name[1]]]
+models.comp <- list(MIK=model.MIK,
+                    DRS=model.DRS)
 
-yearsModel <- rownames(model.MIKandDRS[[1]])
-
-models.comp <- list(MIKandDRS=model.MIKandDRS,
-                    MIK=model.MIK,
-                    MIKandDRS_2018_2023=model.MIKandDRS_2018_2023,
-                    DRS_2018_2023=model.DRS)
+# ------------------------------------------------------------
+# Creating tuning objects
+# ------------------------------------------------------------
 
 load(file.path('./data','NSAS_HAWG2024_sf.RData'))
+
 DRS.idx <- read.csv(file.path('./data','DRS.csv'))
 
 NSH.tun <- window(NSH.tun,
@@ -70,10 +55,10 @@ for(model.name in names(models.comp)){
                             dimnames=dmns)
   IBTS0.model <- FLIndex(index=IBTS0.model)
   
-  NSH.tun[[paste0('IBTS0.',model.name)]] <- IBTS0.model
+  NSH.tun[[paste0('model.',model.name)]] <- IBTS0.model
 }
 
-NSH.tun <- NSH.tun[grepl('IBTS0', names(NSH.tun))]
+NSH.tun <- NSH.tun[grepl('IBTS0', names(NSH.tun)) | grepl('model', names(NSH.tun))]
 
 # add DRS survey
 dmns        <- dimnames(NSH.tun$IBTS0)
@@ -89,6 +74,24 @@ DRS.FL <- FLIndex(index=DRS.FL)
 
 NSH.tun[['DRS']] <- DRS.FL
 
+# add MIK+DRS survey
+MIK.idx <- model.MIK$idx
+DRS.idx <- model.DRS$idx
+
+MIK.idx[rownames(MIK.idx) %in% rownames(DRS.idx)] <- MIK.idx[rownames(MIK.idx) %in% rownames(DRS.idx)]+DRS.idx
+
+dmns        <- dimnames(NSH.tun$IBTS0)
+MIK.FL    <- FLQuant(array( MIK.idx,dim=c(length(dmns$age),
+                                                length(dmns$year),
+                                                1,
+                                                1,
+                                                1,
+                                                1)), # iterations
+                     dimnames=dmns)
+MIK.FL <- FLIndex(index=MIK.FL)
+
+NSH.tun[['model.MIK+DRS']] <- MIK.FL
+
 # apply z-norm
 for(surveyCurrent in names(NSH.tun)){
   # z-norm
@@ -97,20 +100,10 @@ for(surveyCurrent in names(NSH.tun)){
 
 # plot
 df.plot <- as.data.frame(NSH.tun)
-df.plot$cname[df.plot$cname == 'IBTS0.DRS_2018_2023'] <- 'DRS_mod'
 df.plot <- subset(df.plot,slot=='index')
 df.plot$survey <- 'IBTS0'
-df.plot$survey[df.plot$cname == 'DRS'] <- 'DRS'
-df.plot$survey[df.plot$cname == 'IBTS0.MIKandDRS_2018_2023'] <- 'DRS'
-df.plot$survey[df.plot$cname == 'DRS_mod'] <- 'DRS'
 
-temp <- subset(df.plot[df.plot$cname == 'IBTS0.MIKandDRS',],year >= min(DRS.idx$year))
-temp$survey <- 'DRS'
-temp2 <- subset(df.plot[df.plot$cname == 'IBTS0',],year >= min(DRS.idx$year))
-temp2$survey <- 'DRS'
-df.plot <- rbind(df.plot,temp,temp2)
-
-
+df.plot$survey[df.plot$cname %in% c('DRS','IBTS0.DRS')] <- 'DRS'
 
 p <- ggplot(df.plot,aes(x=year,y=data,col=cname))+
       theme_bw()+

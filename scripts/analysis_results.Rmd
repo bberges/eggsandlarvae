@@ -1,0 +1,75 @@
+---
+title: "MIK+DRS analysis"
+output: 
+  bookdown::html_document2:
+    fig_caption: yes
+date: "2024-09-27"
+---
+
+```{r setup, include=FALSE}
+
+library(knitr)
+knitr::opts_chunk$set(comment = NA)
+
+rm(list=(ls()))
+
+mainPath <- "C:/git/eggsandlarvae/"
+#setwd(path1)
+
+library(icesTAF)
+
+library(tidyverse)
+library(pander)
+library(ggplot2)
+
+mod.sel <- 'MIK_LogNormalAbundance'
+df.models.MIK <- read.csv(file.path(mainPath,'/results',paste0(mod.sel,'.csv')))
+
+mod.sel <- 'DRS_LogNormalAbundance'
+df.models.DRS <- read.csv(file.path(mainPath,'/results',paste0(mod.sel,'.csv')))
+
+panderOptions('keep.line.breaks', TRUE)
+```
+
+# Background
+
+The North Sea Autumn Spawning (NSAS) herring stock relies on 4 spawning components: Downs (southern North Sea), Bank, Buchan and Orkney/Shetland (Figure \@ref(fig:components)). NSAS herring benefits form different surveys that are taken into account in the assessment:
+
+- LAI (early larvae index)
+- IBTS0 (late larvae index) - age 0
+- IBTSQ1 (trawl survey quarter 1) - age 1
+- IBTSQ3 (trawl survey quarter 3) - age 0-5
+- HERAS (acoustic survey) - age 1-8
+
+The different surveys cover different ages. Of importance is the timing of spawning. Whilst the Bank, Buchan and Orkney/Shetland spawning components spawn in Autumn, the Downs component spawns in winter. In term of survey sampling for larvae, the difference in spawning time has implications because the IBTS0 survey (so called MIK) taking place yearly in February is only able to sample Autumn spawners, therefore missing the DOwns component that is winter spawning. Since 2018, a dedicated survey, the Downs recruitment survey, has been developed to sample the late larvae from the Downs component. In that context, the hereby document presents the analysis of modelling work undertaken on the MIK and DRS indices, in order to investigate the potential inclusion of the DRS for stock assessment purposes. 
+
+```{r components, echo=FALSE, fig.cap="Yearly contribution of each NSAS spawning component.",fig.dim=c(9,6)}
+knitr::include_graphics(file.path(mainPath,'/figures', "components.png")) 
+```
+
+# MIK Modelling
+
+Prior to the inclusion of the DRS survey in the time series, testing is done on the modelling of the MIK survey to validate the modelling approach. For that exercise, 5 models were considered. The models were ranked based on their AIC but they were first compared against the current IBTS0 and other surveys. The comparison against the IBTS0 is shown in Figure \@ref(fig:compTS)). 
+
+The comparison is further made by cohorts, by looking at the correlation between the predicted 0-age abundance and other abundance at age. This is shown in Figure \@ref(fig:corrCohort). Based on AIC, the best model is model 5. A comparison with the initial IBTS0 is shown in \@ref(fig:compModel5). It seems that the modelled IBTS0 index does not provide an improvement compared to the base IBTS0, though the modelling is consistent with the initial IBTS0. However, it is important to note that the correlation as shown here is based on the entire time series. Due to the change in stock dynamics and productivity, the level of correlation can vary. This is shown in \@ref(fig:corrCohortTime). For example, one can observe that the correlation with the IBTS-Q1 is degrading over time, following the increased contribution of the Downs component.
+
+```{r compTS, echo=FALSE, fig.cap="Comparison of the time series of the different models against the IBTS0 as currently calculated.",fig.dim=c(9,6)}
+knitr::include_graphics(file.path(mainPath,'/figures', "MIK_LogNormalAbundance_IBTS0 TS.png")) 
+```
+
+
+```{r corrCohort, echo=FALSE, fig.cap="Cross correlation by cohorts between the IBTS0 indices and the other surveys.",fig.dim=c(9,6)}
+knitr::include_graphics(file.path(mainPath,'/figures', "MIK_LogNormalAbundance_cor.png")) 
+```
+
+```{r compModel5, echo=FALSE, fig.cap="Cross correlation by cohorts between the IBTS0 indices and the other surveys.",fig.dim=c(9,6)}
+knitr::include_graphics(file.path(mainPath,'/figures', "MIK_LogNormalAbundance_cor best.png")) 
+```
+
+```{r corrCohortTime, echo=FALSE, fig.cap="Cross correlation over time for the IBTS0 model 5. The black line in each plot is the proportion of the Downs component as estimated by the assessment model, based on the LAI survey.",fig.dim=c(9,6)}
+knitr::include_graphics(file.path(mainPath,'/figures', "MIK_LogNormalAbundance_cor and components.png")) 
+```
+
+
+# DRS modelling
+

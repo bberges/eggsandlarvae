@@ -1,6 +1,7 @@
 rm(list=(ls()))
 
-path1 <- "//wurnet.nl/dfs-root/IMARES/IJmuiden/WOT/WOT surveys Zout - Haringlarven/Down's recruitment survey/New index calculation/"
+path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae/"
+#path1 <- "C:/git/harring_eggsandlarvae/"
 setwd(path1)
 
 library(tidyverse)
@@ -28,6 +29,14 @@ dAll[[3]]$Count <- ifelse(is.na(dAll[[3]]$Count), 0, dAll[[3]]$Count)
 dAll[[3]]$LngtClas <- ifelse(is.na(dAll[[3]]$LngtClas), 0, dAll[[3]]$LngtClas)
 dAll[[3]]$LngtCm <- ifelse(is.na(dAll[[3]]$LngtCm), 0, dAll[[3]]$LngtCm)
 
+## TODO ##
+# Figure out the Gear type
+
+dAll$ShipG = factor(paste(dAll$Ship,
+                          dAll$Gear, sep = ":"))
+table(dAll$ShipG)
+dAll$dum = 1 
+
 #####################
 # merge the data
 ca <- dAll[[1]]
@@ -49,16 +58,18 @@ ca.hh.hl <- merge(ca.hh,
                   hl)
 
 #######################
-# abundance
+# CPUE
 # number at length
 NoAtLngt = aggregate(Count ~ haul.id + LngtClas, data = dAll[[3]], FUN = sum)
 dAll$NL = t(t(dAll$N)*1)
 view(dAll[[2]])
 
 dAll$Abundance <- rowSums(dAll$NL[, 1:ncol(dAll$NL)])
-dAll$Nage <- matrix(dAll$Abundance, ncol = 1)
+dAll$CPUE <- dAll$Abundance/dAll[[2]]$SweepLngt
+dAll$Nage <- matrix(dAll$CPUE, ncol = 1)
 colnames(dAll$Nage) <- "1"
 
+##########
 ## Remove levels of Gear, ShipG, StatRec with only zero observations
 dd <- removeZeroClusters(dAll, response="Abundance", factors=c("Gear","Ship"))
 dd <- subset(dd,!is.na(Depth))
@@ -74,16 +85,20 @@ summary(dd[[1]])
 dd[[1]]$Age <- 0
 table(dd[[1]]$Year)
 
+table(dd[[1]]$Gear)
+save(dd, file = "./data/DRS2DATRAS_eggsLarvae.RData")
+load(paste0(getwd(), "./data/DRS2DATRAS_eggsLarvae.RData"))
+
 ## model - tweedie
-model1 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=40) + DayNight + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + s(Depth, bs = 'cr') + offset(log(SweepLngt))"
+model1 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=40) + DayNight + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + s(Depth, bs = 'cr')"
 system.time(TW1 <- getSurveyIdx(dd, ages = 1, predD = grid.df, 
                                 fam = "Tweedie", modelP = model1, gamma = 1, 
                                 cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
 aic.tw1 = AIC.surveyIdx(TW1) # 2489.16
 qqnorm(residuals(TW1), main = paste0("Tweedie, DRS AIC = ", round(aic.tw1))); abline(0,1)
 
-# remove depth
-model2 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=40) + DayNight + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + offset(log(SweepLngt))"
+# square root depth
+model2 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=40) + DayNight + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + s(sqrt(Depth), bs = 'cr')"
 system.time(TW2 <- getSurveyIdx(dd, ages = 1, predD = grid.df, 
                                fam = "Tweedie", modelP = model2, gamma = 1, 
                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))

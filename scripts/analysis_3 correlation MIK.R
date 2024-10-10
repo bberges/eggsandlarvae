@@ -5,7 +5,7 @@
 
 rm(list=(ls()))
 
-path1 <- "G:/git/eggsandlarvae/"
+path1 <- "C:/git/eggsandlarvae/"
 setwd(path1)
 
 library(tidyverse)
@@ -18,39 +18,42 @@ library(ggpubr)
 
 figuresPath <- file.path('.','figures')
 
-# '2018_2023_DRS_tweedieCPUE'
-#'MIK_tweedieCPUE'
-#'MIKandDRS_tweedieCPUE'
-#'2018_2023_MIKandDRS_tweedieCPUE'
-mod.sel <- 'MIKandDRS_tweedieCPUE'
-load(file.path('./results',paste0(mod.sel,'.RData')))
-models <- res
-
-load(file.path('./data','NSAS_HAWG2024_sf.RData'))
-
 # ------------------------------------------------------------
 # model table
 # ------------------------------------------------------------
 
-flagFirst <- T
-for(idx.model in names(models)){
-  df.models <- data.frame(model.name=idx.model,
-                          AIC=AIC.surveyIdx(models[[idx.model]]),
-                          formula=as.character(models[[idx.model]]$pModels[[1]]$formula)[3])
-  if(flagFirst){
-    df.models.all <- df.models
-    flagFirst<- F
-  }else{
-    df.models.all <- rbind(df.models.all,df.models)
-  }
-}
+mod.sel <- 'DRS_LogNormalAbundance'
+load(file.path('./results',paste0(mod.sel,'.RData')))
+df.models.DRS <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
 
-df.models.all <- df.models.all[order(df.models.all$AIC),]
-df.models.all$names<- paste0('IBTS0.',df.models.all$model.name)
+mod.sel <- 'MIK_LogNormalAbundance'
+load(file.path('./results',paste0(mod.sel,'.RData')))
+df.models.MIK <- read.csv(file.path('./results',paste0(mod.sel,'.csv')))
 
-write.csv(df.models.all,file.path('./results',paste0(mod.sel,'.csv')),row.names = F)
+models <- resMIK
+
+load(file.path('./data','NSAS_HAWG2024_sf.RData'))
 
 yearsModel <- rownames(models[[1]]$idx)
+
+# combining MIK+DRS
+MIK.idx <- resMIK[[df.models.MIK$model.name[1]]]$idx
+DRS.idx <- resDRS[[df.models.DRS$model.name[1]]]$idx
+
+MIK.idx[rownames(MIK.idx) %in% rownames(DRS.idx)] <- MIK.idx[rownames(MIK.idx) %in% rownames(DRS.idx)]+DRS.idx
+
+MIK.idx <- MIK.idx[rownames(MIK.idx) %in% yearsModel]
+
+dmns        <- dimnames(NSH.tun$IBTS0)
+dmns$year <-  yearsModel
+MIK.FL    <- FLQuant(array( MIK.idx,dim=c(length(dmns$age),
+                                          length(dmns$year),
+                                          1,
+                                          1,
+                                          1,
+                                          1)), # iterations
+                     dimnames=dmns)
+MIK.FL <- FLIndex(index=MIK.FL)
 
 # ------------------------------------------------------------
 # extracting models and computing normalized indices
@@ -76,6 +79,8 @@ for(model.name in names(models)){
 }
 
 NSH.tun <- NSH.tun[!grepl('LAI', names(NSH.tun))]
+
+NSH.tun[['IBTS0.MIK+DRS']] <- MIK.FL
 
 surveyNames <- names(NSH.tun) # get all the survey names
 
@@ -196,7 +201,7 @@ test.all <- test.all %>% pivot_longer(!age.comp & !surveyComp & !surveyBase,name
 # --------------------------------------
 # Comparing model time series
 # --------------------------------------
-df.plot <- subset(df.all,age.comp == '0')
+df.plot <- subset(df.all,age.comp == '0' & surveyBase != 'IBTS0.MIK+DRS')
 
 p <- ggplot(df.plot,aes(x=cohort,y=data,col=surveyBase))+
       theme_bw()+
@@ -213,7 +218,7 @@ ggsave(file.path(figuresPath,paste0(mod.sel,'_IBTS0 TS.png')),
 # --------------------------------------
 # plotting model results
 # --------------------------------------
-df.plot <- subset(df.all,surveyBase %in% c('IBTS0',df.models.all$names[1]))
+df.plot <- subset(df.all,surveyBase %in% c('IBTS0',df.models.MIK$names[1]))
 p <- ggplot(df.plot,aes(x=data,y=data.comp,col=as.factor(surveyBase)))+
       theme_bw()+
       geom_point()+
@@ -250,7 +255,8 @@ ggsave(file.path(figuresPath,paste0(mod.sel,'_cor.png')),
        units = c("mm"),
        dpi = 300)
 
-p <- ggplot(subset(test.all,metric == 'dist'),aes(x=as.numeric(age.comp),y=data,col=as.factor(surveyBase)))+
+p <- ggplot(subset(test.all,metric == 'dist'),
+            aes(x=as.numeric(age.comp),y=data,col=as.factor(surveyBase)))+
       theme_bw()+
       geom_point()+
       geom_line()+
@@ -266,10 +272,28 @@ ggsave(file.path(figuresPath,paste0(mod.sel,'_dist.png')),
        dpi = 300)
 
 # --------------------------------------
+# plotting model results MIK+DRS
+# --------------------------------------
+df.plot <- subset(df.all,surveyBase %in% c('IBTS0','IBTS0.MIK+DRS') & cohort >=2018)
+p <- ggplot(df.plot,aes(x=data,y=data.comp,col=as.factor(surveyBase)))+
+  theme_bw()+
+  geom_point()+
+  geom_abline (slope=1, linetype = "dashed", color="Red")+
+  geom_smooth(method='lm', formula= y~x)+
+  coord_fixed()+
+  #theme(legend.position = "none")+
+  xlab('IBTS0 index')+
+  ylab('Other index')+
+  theme(legend.position="top")+
+  guides(colour = guide_legend(nrow = 3))+
+  stat_cor(method = "pearson")+
+  facet_grid(surveyComp~age.comp)
+
+# --------------------------------------
 # plotting time series comparison
 # --------------------------------------
 
-df.plot <- subset(df.all,surveyBase %in% c('IBTS0',df.models.all$names[1]))
+df.plot <- subset(df.all,surveyBase %in% c('IBTS0',df.models.MIK$names[1]))
 df.temp <- subset(df.plot,surveyComp == 'IBTS-Q3' & age.comp == '0')
 df.temp$surveyComp <- df.temp$surveyBase
 age.repeat <- rep(unique(df.plot$age.comp), each=dim(df.temp)[1])
@@ -298,7 +322,7 @@ ggsave(file.path(figuresPath,paste0(mod.sel,'_TS.png')),
 # plotting correlation over time
 # --------------------------------------
 if(length(yearsModel) > inter.corr){
-  df.plot <- subset(test.temp.var.all,surveyBase %in% c('IBTS0',df.models.all$names[1]))
+  df.plot <- subset(test.temp.var.all,surveyBase %in% c('IBTS0',df.models.MIK$names[1]))
   
   p <- ggplot()+
     theme_bw()+
@@ -329,11 +353,18 @@ if(length(yearsModel) > inter.corr){
          units = c("mm"),
          dpi = 300)
 }
+
 # --------------------------------------
 # plotting correlation over time
 # --------------------------------------
+
+
+
+# --------------------------------------
+# plotting distance over time
+# --------------------------------------
 if(length(yearsModel) > inter.corr){
-  df.plot <- subset(test.temp.var.all,surveyBase %in% c('IBTS0',df.models.all$names[1]))
+  df.plot <- subset(test.temp.var.all,surveyBase %in% c('IBTS0',df.models.MIK$names[1]))
   
   components.df <- as.data.frame(components(NSH.sam))
   components.df$components <- rownames(components.df)
@@ -355,5 +386,25 @@ if(length(yearsModel) > inter.corr){
          dpi = 300)
 }
 
+#-------------------------------------------------------------------
+# components plot
+#-------------------------------------------------------------------
 
+components.df <- as.data.frame(components(NSH.sam))
+components.df <- components.df[,1:dim(components.df)[2]]
+colnames(components.df) <- ac(1972:range(NSH)['maxyear'])
+ssb.df <- ssb(NSH.sam)
+ssb.df <- ssb.df[ssb.df$year %in% 1972:range(NSH)['maxyear'],]
+components_ssb.df <- sweep(components.df, 2, ssb.df$value,'*')
+components.df$components <- rownames(components.df)
+components.df <- components.df %>% pivot_longer(!components,names_to = "year",values_to='Fraction')
+components.df$year <- as.numeric(components.df$year)
+p <- ggplot(components.df,aes(x=year,y=Fraction,fill=components))+
+  geom_area()
 
+ggsave(file.path(figuresPath,paste0('components.png')),
+       p,
+       width = 170,
+       height = 80,
+       units = c("mm"),
+       dpi = 300)
