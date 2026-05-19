@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
-#path1 <- "C:/git/harring_eggsandlarvae/"
-=======
-#path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
-path1 <- "C:/git/eggsandlarvae/"
->>>>>>> a1473bb8d19c923e69d21332f0821f2a8b877781
+
+path1 <- "D:/git/eggsandlarvae/"
+
 setwd(path1)
 
 library(tidyverse)
@@ -15,11 +11,11 @@ library(tidyr)
 library(sp)
 library(sf)
 
-MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'), strict = TRUE)
+MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_all.csv'), strict = TRUE)
 MIK2DATRAS_eggsLarvae  <- addSpatialData(MIK2DATRAS_eggsLarvae,"./shapefiles/ICES_areas.shp")
 
 MIK2DATRAS_eggsLarvae  <- subset(MIK2DATRAS_eggsLarvae,
-                                 ICES_area %in% as.character(c("IVa","IVb","IVc")))
+                                 ICES_area %in% as.character(c("IVa","IVb","IVc")) & Year %in% c(2022:2025))
 
 MIK2DATRAS_eggsLarvae[[3]]$Count <- MIK2DATRAS_eggsLarvae[[3]]$TotalNo * MIK2DATRAS_eggsLarvae[[3]]$SubFactor
 table(MIK2DATRAS_eggsLarvae$Ship)

@@ -15,8 +15,8 @@ hl <- read_excel(paste0(path1, 'data/',"DATRAS_EggsLarvae_conversion.xlsx", sep 
 ca <- read_excel(paste0(path1, 'data/',"DATRAS_EggsLarvae_conversion.xlsx", sep = ""), sheet = "CA-EH-EM")
 
 # load our data
-EH.MIK <- read.csv(paste0(path1, 'data/',"EH_EggsAndLarvaeDataSet202397_1992_2023.csv"))
-EM.MIK <- read.csv(paste0(path1, 'data/',"EM_EggsAndLarvaeDataSet202397_1992_2023.csv"))
+EH.MIK <- read.csv(paste0(path1, 'data/',"EH_MIK_1992_2025.csv"))
+EM.MIK <- read.csv(paste0(path1, 'data/',"EM_MIK_1992_2025.csv"))
 
 summary(EH.MIK)
 summary(EM.MIK)
@@ -232,36 +232,36 @@ ca[is.na(ca)]<- ""
 # -------------------------------------------------
 # write tables
 # -------------------------------------------------
-write.table(hh,file = file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'),
+write.table(hh,file = file.path('./data','MIK2DATRAS_all.csv'),
             row.names = F,quote = F,append = F, sep=",")
 
-write.table(hl,file = file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'),
+write.table(hl,file = file.path('./data','MIK2DATRAS_all.csv'),
             row.names = F,quote = F,append = T, sep=",")
 
-write.table(ca,file = file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'),
+write.table(ca,file = file.path('./data','MIK2DATRAS_all.csv'),
             row.names = F,quote = F,append = T, sep=",")
 
-MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'), strict = TRUE)
-MIK2DATRAS_eggsLarvae[[3]]$Count <- MIK2DATRAS_eggsLarvae[[3]]$SubFactor * MIK2DATRAS_eggsLarvae[[3]]$TotalNo
-
-dAll <- addSpectrum(MIK2DATRAS_eggsLarvae, cm.breaks=seq(0,40,by=1))
-
-names(dAll[[1]])
-summary(dAll[[1]])
-summary(dAll[[2]])
-summary(dAll[[3]])
-
-rm(list=(ls()))
-
-path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
-#path1 <- "C:/git/harring_eggsandlarvae/"
-setwd(path1)
-
-library(tidyverse)
-library(readxl)
-library(icesDatras)
-library(surveyIndex)
-library(tidyr)
-MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'), strict = TRUE)
+# MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_all.csv'), strict = TRUE)
+# MIK2DATRAS_eggsLarvae[[3]]$Count <- MIK2DATRAS_eggsLarvae[[3]]$SubFactor * MIK2DATRAS_eggsLarvae[[3]]$TotalNo
+# 
+# dAll <- addSpectrum(MIK2DATRAS_eggsLarvae, cm.breaks=seq(0,40,by=1))
+# 
+# names(dAll[[1]])
+# summary(dAll[[1]])
+# summary(dAll[[2]])
+# summary(dAll[[3]])
+# 
+# rm(list=(ls()))
+# 
+# path1 <- "C:/Users/chin008/OneDrive - Wageningen University & Research/git/eggsandlarvae_bberges/eggsandlarvae"
+# #path1 <- "C:/git/harring_eggsandlarvae/"
+# setwd(path1)
+# 
+# library(tidyverse)
+# library(readxl)
+# library(icesDatras)
+# library(surveyIndex)
+# library(tidyr)
+# MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_eggsLarvae_all.csv'), strict = TRUE)
 
 
