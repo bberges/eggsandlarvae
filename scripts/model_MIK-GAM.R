@@ -50,7 +50,7 @@ dd.mik$Nage <- matrix(dd.mik$CPUE, ncol = 1)
 colnames(dd.mik$Nage) <- "1"
 
 ## Remove levels of Gear, ShipG, StatRec with only zero observations
-dd <- removeZeroClusters(dd, response="Abundance", factors=c("Gear","Ship"))
+dd <- removeZeroClusters(dd.mik, response="Abundance", factors=c("Gear","Ship"))
 dd <- subset(dd,!is.na(Depth))
 
 plot(dd$Year,dd$Depth)

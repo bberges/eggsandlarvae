@@ -33,6 +33,10 @@ summary(DRS)
 DRS$RecordType <- "EH-EM"
 DRS$Notes <- "NA"
 
+DRS$Number[is.na(DRS$ICES_MeasurementID)] <- 0
+
+saveRDS(DRS, "data/DRS.rds")
+
 # change column names of hh, hl, ca data
 colnames(hh) <- c("Datras", "fields1", "width1",
                   "mandatory1", "datatype1", "note1",
@@ -44,7 +48,6 @@ hh <- hh[-1,]
 hh_nameslist <- na.omit(hh$field2)
 # change the name Day.night
 hh_nameslist <- gsub("Day/night", "Day.night", hh_nameslist)
-?gsub
 hh.drs <- DRS[, intersect(colnames(DRS), hh_nameslist)]
 hh.drs$RecordType <- "HH"
 hh.drs$VolumeFiltInt <- ifelse(is.na(hh.drs$VolumeFiltInt), (hh.drs$FlowIntRevs/hh.drs$FlowIntCalibr)*hh.drs$NetopeningArea, hh.drs$VolumeFiltInt)
@@ -139,8 +142,9 @@ hh <- hh[!(as.numeric(hh$SweepLngt) == 0),]
 # double check with CIndy that there is only herring. There is different entries in hl$SpecCode:
 # "Clupea harengus"  "Clupea harengus " NA
 # -------------------------------------------------
-hl <- hl.drs %>% select(-c(conversion.hl$fields_eggsLarvae[is.na(conversion.hl$order_slots)]))  %>% 
-  distinct(HaulID,Length,StationNumber,.keep_all=T)
+# hl <- hl.drs %>% select(-c(conversion.hl$fields_eggsLarvae[is.na(conversion.hl$order_slots)]))  %>% 
+#   distinct(HaulID,Length,StationNumber,.keep_all=T)
+hl <- hl.drs %>% select(-c(conversion.hl$fields_eggsLarvae[is.na(conversion.hl$order_slots)]))
 
 idxFields <- match(colnames(hl),
                    conversion.hl$fields_eggsLarvae)

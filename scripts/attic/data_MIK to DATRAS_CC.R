@@ -1,6 +1,6 @@
 rm(list = (ls()))
 
-path1 <- "G:/git/eggsandlarvae/"
+path1 <- "C:/Users/chen072/OneDrive - Wageningen University & Research/0_2026_KBWOT_and others/DRS/eggsandlarvae-main/"
 #path1 <- "C:/git/harring_eggsandlarvae/"
 setwd(path1)
 
@@ -17,7 +17,8 @@ ca <- read_excel(paste0(path1, 'data/',"DATRAS_EggsLarvae_conversion.xlsx", sep 
 # load our data
 EH.MIK <- read.csv(paste0(path1, 'data/',"EH_MIK_1992_2026.csv"))
 EM.MIK <- read.csv(paste0(path1, 'data/',"EM_MIK_1992_2026.csv"))
-
+length(unique(EH.MIK$HaulID))
+length(unique(EM.MIK$HaulID))
 summary(EH.MIK)
 summary(EM.MIK)
 EH.MIK$RecordType <- NULL
@@ -25,12 +26,21 @@ EM.MIK$RecordType <- NULL
 EH.MIK$Notes <- NULL
 EM.MIK$Notes <- NULL
 
-# calculate missing VolumeFiltInt
+# calculate missing VolumeFiltInt ----
 EH.MIK$VolumeFiltInt <- ifelse(is.na(EH.MIK$VolumeFiltInt), (EH.MIK$FlowIntRevs/EH.MIK$FlowIntCalibr)*EH.MIK$NetopeningArea, EH.MIK$VolumeFiltInt)
+summary(EH.MIK$VolumeFiltInt)
 
+# merge trawlist with length samples ----
 MIK <- full_join(EM.MIK, EH.MIK, by = c("HaulID", "ICES_FileID", "ICES_HaulID"))
 summary(MIK)
+length(unique(MIK$HaulID))
 
+table(MIK$ELHaulFlag, useNA="always")
+summary(MIK$ICES_MeasurementID)
+summary(MIK$Number)
+unique(MIK$Species)
+
+## CC: assign zero catches
 MIK$Number[is.na(MIK$ICES_MeasurementID)] <- 0
 
 # CC: check duplicate rows:  Cindy said include them ----
@@ -47,7 +57,13 @@ MIK %>%
 
 MIK[MIK$HaulID == "2026NL3400208" & MIK$Length == 26 & MIK$StationNumber=="10183427",]
 
+## CC: disabled this, ICES_MeasurementID= NA are zero hauls, should include
+#MIK <- MIK %>%
+#  filter(!is.na(ICES_MeasurementID)) %>%  ## this would exclude the zero observations
+#  filter(!ELHaulFlag == "U")
 
+# assign larva source ----
+## when length = na, include 
 # find the ICES rectangle (statrec) where the threshold needs to be applied
 ices.rect <- c("36E9", "36F0", "36F1", "36F2", "36F3", "36F4", "36F5", "36F6", "36F7",
                "35F0", "35F1", "35F2", "35F3", "35F4",
@@ -60,6 +76,173 @@ ices.rect <- c("36E9", "36F0", "36F1", "36F2", "36F3", "36F4", "36F5", "36F6", "
 MIK$threshold.area <- ifelse(MIK$statrec %in% ices.rect | MIK$StartLatitude < 54, "MIK-south", "MIK-north")
 MIK$threshold.area[MIK$threshold.area == "MIK-south" & MIK$Length < 19 &  !(is.na(MIK$Length)) & MIK$Length != 0] <- "Downs"
 table(MIK$threshold.area, useNA="always")
+## CC: updated the area-length selection part. 
+#MIK.thres <- subset(MIK, threshold.area == "south")
+#MIK.origi <- subset(MIK, threshold.area == "north")
+#MIK.thres <- MIK.thres %>%
+#  filter(!(Length > 0 & Length < 19))
+#MIK.down <- MIK.thres %>%
+ # filter(Length <19 &  !(is.na(Length)) & Length != 0)
+#MIK.thres <- MIK.thres %>%
+ # filter(Length >= 19 | is.na(Length) | Length == 0)
+#summary(MIK.thres$Length)
+#MIK <- rbind(MIK.thres, MIK.origi) # 67854 obs.
+#summary(MIK)
+#length(unique(MIK$HaulID))
+
+## plot sample locations
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+world   <- ne_countries(scale = "medium", returnclass = "sf")
+myvalue <-  c("MIK-north" = "#185FA5", "MIK-south" = "#D85A30","Downs" = "#2A9D8F" )
+
+# Get unique haul locations (
+haul_locs <- MIK |>
+  distinct(HaulID, StartLongitude, StartLatitude, threshold.area)
+
+# Plot
+ggplot() +
+  geom_sf(data = world, fill = "grey85", color = "white", linewidth = 0.3) +
+  geom_point(data = haul_locs,
+             aes(x = StartLongitude, y = StartLatitude, color = threshold.area),
+             size = 2, alpha = 0.7) +
+  coord_sf(xlim = c(-5, 15), ylim = c(50, 65)) +  # adjust to your data extent
+  scale_color_manual(values = myvalue) +
+  facet_wrap(~threshold.area) +
+  labs(x = NULL, y = NULL, color = "threshold area") +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold"))
+
+# sample locations per year 
+haul_locs_year <- MIK |>
+  distinct(Year, HaulID, StartLongitude, StartLatitude, threshold.area)
+ggplot() +
+  geom_sf(data = world,
+          fill = "grey85",
+          color = "white",
+          linewidth = 0.3) +
+  geom_point(
+    data = haul_locs_year,
+    aes(
+      x = StartLongitude,
+      y = StartLatitude,
+      color = threshold.area
+    ),
+    size = 2,
+    alpha = 0.7
+  ) +
+  coord_sf(xlim = c(-5, 15), ylim = c(50, 65)) +
+  scale_color_manual(
+    values = myvalue
+  ) +
+  facet_wrap(~Year, ncol=10) +
+  labs(
+    x = NULL,
+    y = NULL,
+    color = "threshold area"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold")
+  )
+
+# length histogram ----
+summary(MIK$Length)
+## histogram
+MIK_plot <- MIK %>%
+  filter(!is.na(Length), Length != 0) %>%
+  group_by(HaulID, Year, threshold.area, Length) %>%
+  summarise(
+    Number = sum(Number, na.rm = TRUE),
+    .groups = "drop"
+  )
+ggplot(MIK_plot, aes(x = Length, fill = threshold.area, weight = Number)) +
+  geom_histogram(
+    binwidth = 1,
+    position = "identity",
+    alpha = 0.5,
+    color = "black"
+  ) +
+  #facet_wrap(~Year) +
+  scale_fill_manual(
+    values = myvalue
+  ) +
+  labs(
+    x = "Length",
+    y = "Number of fish",
+    fill = "threshold area"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    strip.background = element_blank(),
+    strip.text = element_text(face = "bold")
+  )
+
+ggplot(MIK_plot[MIK_plot$threshold.area != "Downs",],
+       aes(x = Length, fill = threshold.area, weight = Number)) +
+  geom_histogram(
+    binwidth = 1,
+    position = "identity",
+    alpha = 0.5,
+    color = "black"
+  ) +
+  facet_wrap(~Year) +
+  coord_cartesian(xlim = c(0, 50)) +
+  scale_fill_manual(values = myvalue) +
+  theme_bw()
+
+
+library(Hmisc)
+
+length_summary <- MIK %>%
+  filter(!is.na(Length), Length != 0, !is.na(Number)) %>%
+  group_by(Year, threshold.area) %>%
+  summarise(
+    mean_length = weighted.mean(Length, w = Number),
+    median_length = wtd.quantile(Length, weights = Number, probs = 0.5),
+    min_length = min(Length),
+    max_length = max(Length),
+    total_fish = sum(Number),
+    .groups = "drop"
+  )
+
+length_summary
+
+ggplot(length_summary, aes(x = Year, color = threshold.area)) +
+  geom_line(aes(y = mean_length), linewidth = 1) +
+  geom_point(aes(y = mean_length), size = 2) +
+  geom_line(aes(y = median_length), linetype = "dashed", linewidth = 1) +
+  geom_point(aes(y = median_length), shape = 17, size = 2) +
+  scale_color_manual(values = myvalue) +
+  labs(
+    y = "Length",
+    color = "Threshold area",
+    title = "Mean and median of observed length by year"
+  ) +
+  theme_bw()
+
+ggplot(length_summary,
+       aes(x = Year, y = median_length, color = threshold.area)) +
+  geom_linerange(aes(ymin = min_length, ymax = max_length),
+                 position = position_dodge(width = 0.4),
+                 linewidth = 1) +
+  geom_point(position = position_dodge(width = 0.4),
+             size = 3) +
+  scale_color_manual(values = myvalue) +
+  labs(
+    y = "Length",
+    color = "Threshold area",
+    title = "Length range and median by year"
+  ) +
+  theme_bw()
 
 # CC: exclude Downs ----
 MIK <- MIK[MIK$threshold.area != "Downs",]
@@ -67,10 +250,12 @@ length(unique(MIK$HaulID))
 sum(MIK$Number)
 summary(MIK$Length)
 
+saveRDS(MIK, "data/MIK.rds")
+
+# convert to Datras ----
+## process MIK
 MIK$RecordType <- "EH-EM"
 MIK$Notes <- "NA"
-
-saveRDS(MIK, "data/MIK.rds")
 
 # Change column names of hh, hl, ca data
 colnames(hh) <- c("Datras", "fields1", "width1",
@@ -157,18 +342,18 @@ hh$DataType <- 'R' # check this value
 
 hh[is.na(hh)]<- ""
 
-hh <- hh[!is.na(as.numeric(hh$SweepLngt)),]
-hh <- hh[!(as.numeric(hh$SweepLngt) == 0),]
-
 # -------------------------------------------------
 # create hl data frame
 # double check LngtCode with Cindy. Currently set at 0
 # double check with CIndy that there is only herring. There is different entries in hl$SpecCode:
 # "Clupea harengus"  "Clupea harengus " NA
 # -------------------------------------------------
-# hl <- hl.mik %>% select(-c(conversion.hl$fields_eggsLarvae[is.na(conversion.hl$order_slots)]))  %>% 
-#   distinct(HaulID,Length,StationNumber,.keep_all=T)
+### CC: disabled distinct(HaulID,Length,StationNumber,.keep_all=T), Cindy said these duplicates are valid
+#hl <- hl.mik %>% select(-c(conversion.hl$fields_eggsLarvae[is.na(conversion.hl$order_slots)]))  %>% 
+#  distinct(HaulID,Length,StationNumber,.keep_all=T)
 hl <- hl.mik %>% select(-c(conversion.hl$fields_eggsLarvae[is.na(conversion.hl$order_slots)]))
+
+###?/
 
 idxFields <- match(colnames(hl),
                    conversion.hl$fields_eggsLarvae)
@@ -188,8 +373,6 @@ hl <- hl[,order(conversion.hl$order_slots[idxFields])]
 
 hl$HaulNo <- gsub(" ", "", hl$HaulNo, fixed = TRUE)
 hl$LngtCode <- 0 # this can mess the data, please double checked thoroughly
-
-hl <- hl[hl$HaulNo %in% hh$HaulNo,]
 
 # fix of fields, take from hh
 for(idxHaul in unique(hl$HaulNo)){
@@ -233,8 +416,6 @@ ca <- ca[,order(conversion.ca$order_slots[idxFields])]
 
 ca$HaulNo <- gsub(" ", "", ca$HaulNo, fixed = TRUE)
 ca$LngtCode <- 1  # this can mess the data, please double checked thoroughly
-
-ca <- ca[ca$HaulNo %in% hh$HaulNo,]
 
 # fix of fields, take from hh
 for(idxHaul in unique(ca$HaulNo)){
