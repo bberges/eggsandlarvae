@@ -1,21 +1,25 @@
+rm(list = (ls()))
 
-path1 <- "D:/git/eggsandlarvae/"
+path1 <- "G:/git/eggsandlarvae/"
 
 setwd(path1)
 
-library(tidyverse)
-library(readxl)
-library(icesDatras)
+# library(tidyverse)
+# library(readxl)
+# library(icesDatras)
+library(DATRAS)
 library(surveyIndex)
-library(tidyr)
-library(sp)
-library(sf)
+# library(tidyr)
+# library(sp)
+# library(sf)
 
 MIK2DATRAS_eggsLarvae <- readICES(file.path('./data','MIK2DATRAS_all.csv'), strict = TRUE)
-MIK2DATRAS_eggsLarvae  <- addSpatialData(MIK2DATRAS_eggsLarvae,"./shapefiles/ICES_areas.shp")
+# MIK2DATRAS_eggsLarvae  <- addSpatialData(MIK2DATRAS_eggsLarvae,"./shapefiles/ICES_areas.shp")
 
-MIK2DATRAS_eggsLarvae  <- subset(MIK2DATRAS_eggsLarvae,
-                                 ICES_area %in% as.character(c("IVa","IVb","IVc")) & Year %in% c(2022:2025))
+# MIK2DATRAS_eggsLarvae  <- subset(MIK2DATRAS_eggsLarvae,
+#                                  ICES_area %in% as.character(c("IVa","IVb","IVc")) & Year %in% c(2022:2025))
+
+# MIK2DATRAS_eggsLarvae  <- subset(MIK2DATRAS_eggsLarvae,Year %in% c(2016:2017))
 
 MIK2DATRAS_eggsLarvae[[3]]$Count <- MIK2DATRAS_eggsLarvae[[3]]$TotalNo * MIK2DATRAS_eggsLarvae[[3]]$SubFactor
 table(MIK2DATRAS_eggsLarvae$Ship)
@@ -41,11 +45,12 @@ dd.mik$NL = dd.mik$N
 
 dd.mik$Abundance <- rowSums(dd.mik$NL[, 1:ncol(dd.mik$NL)])
 dd.mik$CPUE <- dd.mik$Abundance/dd.mik[[2]]$SweepLngt
+# dd.mik <- dd.mik[!is.na(dd.mik$CPUE)]
 dd.mik$Nage <- matrix(dd.mik$CPUE, ncol = 1)
 colnames(dd.mik$Nage) <- "1"
 
 ## Remove levels of Gear, ShipG, StatRec with only zero observations
-dd <- removeZeroClusters(dd.mik, response="CPUE", factors=c("Gear","Ship"))
+dd <- removeZeroClusters(dd, response="Abundance", factors=c("Gear","Ship"))
 dd <- subset(dd,!is.na(Depth))
 
 plot(dd$Year,dd$Depth)
@@ -68,7 +73,7 @@ dd[[1]]$Age <- 0
 #################
 ## tweedie - CPUE
 #
-model7 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1)+ s(ShipG, bs = 're') + Country + s(Depth, bs = 'cr')"
+model7 = "Year+ s(lon,lat,bs='ds', m=c(1,0.5), k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1)+ s(ShipG, bs = 're') + Country + s(Depth, bs = 'cr')"
 system.time(TW7 <- getSurveyIdx(dd, ages = 1, predD = grid.df, 
                                 fam = "Tweedie", modelP = model7, gamma = 1, 
                                 cutOff = exp(-9), control = list(trace = TRUE, maxit = 20)))
@@ -98,8 +103,6 @@ system.time(TW10 <- getSurveyIdx(dd, ages = 1, predD = grid.df,
                                 cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
 aic.tw10 = AIC.surveyIdx(TW10) # 421, better model
 qqnorm(residuals(TW10), main = paste0("Tweedie, MIK AIC = ", round(aic.tw10))); abline(0,1)
-
-<<<<<<< HEAD
 
 res <- list(mod7=TW7,
             mod8=TW8,
@@ -288,7 +291,7 @@ qqnorm(residuals(TW6), main = paste0("Tweedie, MIK AIC = ", round(aic.tw6))); ab
 # Log-normal distribution
 model = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
 modelZ = "Year + Country + s(sqrt(Depth), k = 5, bs = 'ds', m = c(1, 0)) + s(ShipG,bs='re',by=dum) + s(lon,lat,bs='ds',m=c(1,0.5),k=80) + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + offset(log(SweepLngt))"
->>>>>>> a1473bb8d19c923e69d21332f0821f2a8b877781
+
 system.time( SI.dln1 <- getSurveyIdx(dd_abundance,ages=1,predD=grid.df,fam="LogNormal",modelP=model,modelZ=modelZ,gamma=1,cutOff=0.1,control=list(trace=TRUE,maxit=20)))
 aic.sidln1 = AIC.surveyIdx(SI.dln1) # 74828
 qqnorm(residuals(SI.dln1), main=paste0("Delta-Log Normal, AIC = ",round(aic.sidln1,1))); abline(0,1)

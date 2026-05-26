@@ -1,6 +1,6 @@
 rm(list=(ls()))
 
-path1 <- "D:/git/eggsandlarvae/"
+path1 <- "G:/git/eggsandlarvae/"
 #path1 <- "C:/git/harring_eggsandlarvae/"
 setwd(path1)
 
@@ -10,21 +10,25 @@ library(icesDatras)
 library(surveyIndex)
 library(tidyr)
 
-DATRAS_eggsLarvae <- readICES(file.path('./data','DATRAS_eggsLarvae_all.csv'), strict = TRUE)
+DATRAS_eggsLarvae <- readICES(file.path('./data','DRS2DATRAS_all.csv'), strict = TRUE)
+# DATRAS_eggsLarvae  <- addSpatialData(DATRAS_eggsLarvae,"./shapefiles/ICES_areas.shp")
+
+# DATRAS_eggsLarvae  <- subset(DATRAS_eggsLarvae,
+#                              Year %in% c(2025))
 
 # DATRAS_eggsLarvae  <- subset(DATRAS_eggsLarvae,Species==species,Quarter == 1,Year %in% yearlist,HaulVal=="V",StdSpecRecCode==1)
 #DATRAS_eggsLarvae  <- addSpatialData(DATRAS_eggsLarvae,"./data/shapefiles/ICES_areas.shp")
-DATRAS_eggsLarvae[[1]] #CA data
-DATRAS_eggsLarvae[[2]] #HH data
-DATRAS_eggsLarvae[[3]] #HL data
+# DATRAS_eggsLarvae[[1]] #CA data
+# DATRAS_eggsLarvae[[2]] #HH data
+# DATRAS_eggsLarvae[[3]] #HL data
 DATRAS_eggsLarvae[[3]]$Count <- DATRAS_eggsLarvae[[3]]$SubFactor * DATRAS_eggsLarvae[[3]]$TotalNo
 
 dAll <- addSpectrum(DATRAS_eggsLarvae, cm.breaks=seq(0,40,by=1))
-names(dAll[[1]])
-summary(dAll[[1]])
-plot(dAll[[2]]$lon, dAll[[2]]$lat, pch = 1)
+# names(dAll[[1]])
+# summary(dAll[[1]])
+# plot(dAll[[2]]$lon, dAll[[2]]$lat, pch = 1)
 
-summary(dAll[[3]])
+# summary(dAll[[3]])
 dAll[[3]]$Count <- ifelse(is.na(dAll[[3]]$Count), 0, dAll[[3]]$Count)
 dAll[[3]]$LngtClas <- ifelse(is.na(dAll[[3]]$LngtClas), 0, dAll[[3]]$LngtClas)
 dAll[[3]]$LngtCm <- ifelse(is.na(dAll[[3]]$LngtCm), 0, dAll[[3]]$LngtCm)
@@ -85,9 +89,9 @@ summary(dd[[1]])
 dd[[1]]$Age <- 0
 table(dd[[1]]$Year)
 
-table(dd[[1]]$Gear)
-save(dd, file = "./data/DRS2DATRAS_eggsLarvae.RData")
-load(paste0(getwd(), "./data/DRS2DATRAS_eggsLarvae.RData"))
+# table(dd[[1]]$Gear)
+# save(dd, file = "./data/DRS2DATRAS_eggsLarvae.RData")
+# load(paste0(getwd(), "./data/DRS2DATRAS_eggsLarvae.RData"))
 
 ## model - tweedie
 model1 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=40) + DayNight + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + s(Depth, bs = 'cr')"
@@ -100,8 +104,8 @@ qqnorm(residuals(TW1), main = paste0("Tweedie, DRS AIC = ", round(aic.tw1))); ab
 # square root depth
 model2 = "Year + s(lon,lat,bs='ds', m=c(1,0.5), k=40) + DayNight + s(lon,lat,bs='ds',m=c(1,0.5),by=Year,k=5,id=1) + s(Ship, bs = 're') + s(sqrt(Depth), bs = 'cr')"
 system.time(TW2 <- getSurveyIdx(dd, ages = 1, predD = grid.df, 
-                               fam = "Tweedie", modelP = model2, gamma = 1, 
-                               cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
+                                fam = "Tweedie", modelP = model2, gamma = 1, 
+                                cutOff = 0.1, control = list(trace = TRUE, maxit = 20)))
 aic.tw2 = AIC.surveyIdx(TW2) # 2487.85
 qqnorm(residuals(TW2), main = paste0("Tweedie, DRS AIC = ", round(aic.tw2))); abline(0,1) 
 # TW2 is a better model

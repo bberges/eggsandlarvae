@@ -1,6 +1,6 @@
 rm(list=(ls()))
 
-path1 <- "D:/git/eggsandlarvae/"
+path1 <- "G:/git/eggsandlarvae/"
 setwd(path1)
 
 library(tidyverse)
@@ -19,6 +19,7 @@ ca <- read_excel(paste0(path1,'data/', "DATRAS_EggsLarvae_conversion.xlsx", sep 
 # load our data
 EH.DRS <- read.csv(paste0(path1,'data/', "EH_DRS_2018_2025.csv")) # 326
 EM.DRS <- read.csv(paste0(path1,'data/', "EM_DRS_2018_2025.csv")) # 1549
+EM.DRS <- EM.DRS %>% rename(RaisingFactor=SubFactor) # hack to wait for updated data
 summary(EH.DRS)
 summary(EM.DRS)
 # merge EH.DRS and EM.DRS data
@@ -101,8 +102,8 @@ conversion.hh$fields_eggsLarvae <- ifelse(conversion.hh$fields_eggsLarvae == "Da
                                           "Day.night", conversion.hh$fields_eggsLarvae)
 
 hh <- hh.drs %>% 
-      select(-c(conversion.hh$fields_eggsLarvae[is.na(conversion.hh$order_slots)])) %>% 
-      distinct(HaulID,StationNumber,VolumeFiltInt, .keep_all=T)
+  select(-c(conversion.hh$fields_eggsLarvae[is.na(conversion.hh$order_slots)])) %>% 
+  distinct(HaulID,StationNumber,VolumeFiltInt, .keep_all=T)
 
 idxFields <- match(colnames(hh), 
                    conversion.hh$fields_eggsLarvae)
@@ -129,6 +130,9 @@ hh$DataType <- 'R' # check this value
 
 hh[is.na(hh)]<- ""
 
+hh <- hh[!is.na(as.numeric(hh$SweepLngt)),]
+hh <- hh[!(as.numeric(hh$SweepLngt) == 0),]
+
 # -------------------------------------------------
 # create hl data frame
 # double check LngtCode with Cindy. Currently set at 0
@@ -136,7 +140,7 @@ hh[is.na(hh)]<- ""
 # "Clupea harengus"  "Clupea harengus " NA
 # -------------------------------------------------
 hl <- hl.drs %>% select(-c(conversion.hl$fields_eggsLarvae[is.na(conversion.hl$order_slots)]))  %>% 
-      distinct(HaulID,Length,StationNumber,.keep_all=T)
+  distinct(HaulID,Length,StationNumber,.keep_all=T)
 
 idxFields <- match(colnames(hl),
                    conversion.hl$fields_eggsLarvae)
@@ -156,6 +160,8 @@ hl <- hl[,order(conversion.hl$order_slots[idxFields])]
 
 hl$HaulNo <- gsub(" ", "", hl$HaulNo, fixed = TRUE)
 hl$LngtCode <- 0 # this can mess the data, please double checked thoroughly
+
+hl <- hl[hl$HaulNo %in% hh$HaulNo,]
 
 # fix of fields, take from hh
 for(idxHaul in unique(hl$HaulNo)){
@@ -200,6 +206,8 @@ ca <- ca[,order(conversion.ca$order_slots[idxFields])]
 ca$HaulNo <- gsub(" ", "", ca$HaulNo, fixed = TRUE)
 ca$LngtCode <- 1  # this can mess the data, please double checked thoroughly
 
+ca <- ca[ca$HaulNo %in% hh$HaulNo,]
+
 # fix of fields, take from hh
 for(idxHaul in unique(ca$HaulNo)){
   idxFilt <- ca$HaulNo == idxHaul
@@ -220,14 +228,14 @@ ca[is.na(ca)]<- ""
 # -------------------------------------------------
 # write tables
 # -------------------------------------------------
-write.table(hh,file = file.path('./data','DATRAS_eggsLarvae_all.csv'),
-             row.names = F,quote = F,append = F, sep=",")
+write.table(hh,file = file.path('./data','DRS2DATRAS_all.csv'),
+            row.names = F,quote = F,append = F, sep=",")
 
-write.table(hl,file = file.path('./data','DATRAS_eggsLarvae_all.csv'),
-             row.names = F,quote = F,append = T, sep=",")
+write.table(hl,file = file.path('./data','DRS2DATRAS_all.csv'),
+            row.names = F,quote = F,append = T, sep=",")
 
-write.table(ca,file = file.path('./data','DATRAS_eggsLarvae_all.csv'),
-             row.names = F,quote = F,append = T, sep=",")
+write.table(ca,file = file.path('./data','DRS2DATRAS_all.csv'),
+            row.names = F,quote = F,append = T, sep=",")
 
 # setwd('./data')
 # zip(zipfile = 'DATRAS_eggsLarvae_all.zip', files = 'DATRAS_eggsLarvae_all.csv')
@@ -236,20 +244,20 @@ write.table(ca,file = file.path('./data','DATRAS_eggsLarvae_all.csv'),
 # DATRAS_eggsLarvae <- readExchangeDir(path = file.path(".","/data/"),
 #                                      pattern = ".zip", strict = TRUE)
 
-DATRAS_eggsLarvae <- readICES(file.path('./data','DATRAS_eggsLarvae_all.csv'), strict = TRUE)
+# DATRAS_eggsLarvae <- readICES(file.path('./data','DRS2DATRAS_all.csv'), strict = TRUE)
 
 # DATRAS_eggsLarvae  <- subset(DATRAS_eggsLarvae,Species==species,Quarter == 1,Year %in% yearlist,HaulVal=="V",StdSpecRecCode==1)
-DATRAS_eggsLarvae  <- addSpatialData(DATRAS_eggsLarvae,"./data/shapefiles/ICES_areas.shp")
-DATRAS_eggsLarvae[[1]] #CA data
-DATRAS_eggsLarvae[[2]] #HH data
-DATRAS_eggsLarvae[[3]] #HL data
-DATRAS_eggsLarvae[[3]]$Count <- DATRAS_eggsLarvae[[3]]$SubFactor * DATRAS_eggsLarvae[[3]]$TotalNo
-
-dAll <- addSpectrum(DATRAS_eggsLarvae, cm.breaks=seq(0,40,by=1))
-
-names(dAll[[1]])
-summary(dAll[[1]])
-summary(dAll[[2]])
-summary(dAll[[3]])
+# DATRAS_eggsLarvae  <- addSpatialData(DATRAS_eggsLarvae,"./data/shapefiles/ICES_areas.shp")
+# DATRAS_eggsLarvae[[1]] #CA data
+# DATRAS_eggsLarvae[[2]] #HH data
+# DATRAS_eggsLarvae[[3]] #HL data
+# DATRAS_eggsLarvae[[3]]$Count <- DATRAS_eggsLarvae[[3]]$SubFactor * DATRAS_eggsLarvae[[3]]$TotalNo
+# 
+# dAll <- addSpectrum(DATRAS_eggsLarvae, cm.breaks=seq(0,40,by=1))
+# 
+# names(dAll[[1]])
+# summary(dAll[[1]])
+# summary(dAll[[2]])
+# summary(dAll[[3]])
 
 

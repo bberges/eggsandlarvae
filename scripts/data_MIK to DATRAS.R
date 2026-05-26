@@ -1,6 +1,6 @@
 rm(list = (ls()))
 
-path1 <- "D:/git/eggsandlarvae/"
+path1 <- "G:/git/eggsandlarvae/"
 #path1 <- "C:/git/harring_eggsandlarvae/"
 setwd(path1)
 
@@ -15,8 +15,8 @@ hl <- read_excel(paste0(path1, 'data/',"DATRAS_EggsLarvae_conversion.xlsx", sep 
 ca <- read_excel(paste0(path1, 'data/',"DATRAS_EggsLarvae_conversion.xlsx", sep = ""), sheet = "CA-EH-EM")
 
 # load our data
-EH.MIK <- read.csv(paste0(path1, 'data/',"EH_MIK_1992_2025.csv"))
-EM.MIK <- read.csv(paste0(path1, 'data/',"EM_MIK_1992_2025.csv"))
+EH.MIK <- read.csv(paste0(path1, 'data/',"EH_MIK_1992_2026.csv"))
+EM.MIK <- read.csv(paste0(path1, 'data/',"EM_MIK_1992_2026.csv"))
 
 summary(EH.MIK)
 summary(EM.MIK)
@@ -141,6 +141,9 @@ hh$DataType <- 'R' # check this value
 
 hh[is.na(hh)]<- ""
 
+hh <- hh[!is.na(as.numeric(hh$SweepLngt)),]
+hh <- hh[!(as.numeric(hh$SweepLngt) == 0),]
+
 # -------------------------------------------------
 # create hl data frame
 # double check LngtCode with Cindy. Currently set at 0
@@ -168,6 +171,8 @@ hl <- hl[,order(conversion.hl$order_slots[idxFields])]
 
 hl$HaulNo <- gsub(" ", "", hl$HaulNo, fixed = TRUE)
 hl$LngtCode <- 0 # this can mess the data, please double checked thoroughly
+
+hl <- hl[hl$HaulNo %in% hh$HaulNo,]
 
 # fix of fields, take from hh
 for(idxHaul in unique(hl$HaulNo)){
@@ -211,6 +216,8 @@ ca <- ca[,order(conversion.ca$order_slots[idxFields])]
 
 ca$HaulNo <- gsub(" ", "", ca$HaulNo, fixed = TRUE)
 ca$LngtCode <- 1  # this can mess the data, please double checked thoroughly
+
+ca <- ca[ca$HaulNo %in% hh$HaulNo,]
 
 # fix of fields, take from hh
 for(idxHaul in unique(ca$HaulNo)){
